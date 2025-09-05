@@ -26,8 +26,8 @@ X, Y = np.meshgrid(x, y)
 phi = np.angle(X + 1j * Y)
 
 l = 2    # Topological charge
-nx = 50  # Number of horizontal grooves
-ny = 50  # Number of vertical grooves
+nx = 200  # Number of horizontal grooves
+ny = 200  # Number of vertical grooves
 
 # Calculate grating vector components
 gx = nx / H
