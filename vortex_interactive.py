@@ -32,7 +32,7 @@ else:
 # Create control window
 root = tk.Tk()
 root.title("SLM Controls")
-root.geometry("400x400")
+root.geometry("360x400")
 
 # Function to close all created windows
 def quit_program():
