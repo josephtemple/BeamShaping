@@ -1,3 +1,9 @@
+"""
+vortex.py
+
+Creates SLM hologram to shape Gaussian beam. Now largely irrelevant on account
+of the interactive version, but kept as legacy code.
+"""
 import numpy as np
 import cv2
 from screeninfo import get_monitors

@@ -1,3 +1,9 @@
+"""
+vortex_interactive.py
+
+Enables real-time (ish) changes to SLM pattern using tkinter GUI
+"""
+
 import numpy as np
 import cv2
 import tkinter as tk
@@ -10,7 +16,7 @@ if len(monitors) > 1:
     print("[vortex.py] Secondary monitor set as SLM display.")
 else:
     slm_monitor = monitors[0]
-    print("[vortex.py][DEBUG] SLM not detected. Will display SLM in secondary window.")
+    print("[vortex.py][DEBUG] SLM not detected. Will display SLM in secondary window on primary monitor.")
 
 H = slm_monitor.width
 V = slm_monitor.height
