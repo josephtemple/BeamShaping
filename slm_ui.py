@@ -2,16 +2,24 @@
 slm_ui.py
 
 Contains the UI for setting specific parameters of the SLM hologram (l, nx, ny) as well as the 
-details of the imaging pixel sweep. That is, what offsets from perfectly centeres we will image
+details of the imaging pixel sweep. That is, what offsets from perfectly centered we will image
 the beam for.
 """
 import tkinter as tk
 from tkinter import ttk
+import cv2
 
 class SLMControlsUI():
-    def __init__(self, master):
-        # window setup
+    def __init__(self, master, cam=None, set_slm_func=None):
+        """
+        cam : optional camera object passed from main script
+        set_slm_func : optional function handle (x0,y0,l,nx,ny) to refresh SLM
+        """
         self.master = master
+        self.cam = cam
+        self.set_slm_func = set_slm_func
+
+        # window setup
         master.title("SLM Controls")
         frame_top = ttk.Frame(master)
         frame_top.pack(padx=10, pady=5, fill="x")
@@ -74,17 +82,36 @@ class SLMControlsUI():
         self.y_stop_entry.grid(row=1, column=1, padx=5, pady=2)
         self.y_step_entry.grid(row=1, column=2, padx=5, pady=2)
 
-        # buttons to quit and start data gathering
+        # buttons to quit, preview, and start data gathering
         frame_buttons = ttk.Frame(master)
         frame_buttons.pack(pady=10)
 
         quit_btn = tk.Button(frame_buttons, text="QUIT", bg="red", fg="white", command=master.destroy)
-        quit_btn.grid(row=0, column=0, padx=20)
+        quit_btn.grid(row=0, column=0, padx=15)
+
+        preview_btn = tk.Button(frame_buttons, text="PREVIEW", bg="blue", fg="white", command=self.preview_button)
+        preview_btn.grid(row=0, column=1, padx=15)
 
         self.gather_clicked = False
-
         gather_btn = tk.Button(frame_buttons, text="GATHER", bg="green", fg="white", command=self.gather_button)
-        gather_btn.grid(row=0, column=1, padx=20)
+        gather_btn.grid(row=0, column=2, padx=15)
+
+    def preview_button(self):
+        if self.cam is None:
+            print("[slm_ui] No camera passed to UI, cannot preview.")
+            return
+        print("[slm_ui] Entering preview mode (press 'q' in window to quit).")
+
+        vals = self.get_values()
+        if self.set_slm_func:
+            self.set_slm_func(0, 0, vals)  # center hologram at (0,0) during preview
+
+        while True:
+            frame = self.cam.grab()[0]
+            cv2.imshow("Live Preview", frame)
+            if cv2.waitKey(20) & 0xFF == ord('q'):
+                break
+        cv2.destroyWindow("Live Preview")
 
     def gather_button(self):
         if not self.gather_clicked:
@@ -118,6 +145,3 @@ if __name__ == "__main__":
     root = tk.Tk()
     app = SLMControlsUI(root)
     root.mainloop()
-
-
-

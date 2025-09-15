@@ -50,44 +50,36 @@ else:
     cv2.namedWindow(slm_window_name, cv2.WINDOW_NORMAL)
     cv2.resizeWindow(slm_window_name, 1200, 900)
 
-# Create control window and unpack values after pressing "GATHER" button
-root = tk.Tk()
-ui = SLMControlsUI(root)
-root.mainloop()
-values = ui.values
-
-l = values["l"]
-nx = values["nx"]
-ny = values["ny"]
-
-x_start = values["x_start"]
-x_stop = values["x_stop"]
-x_step = values["x_step"]
-
-y_start = values["y_start"]
-y_stop = values["y_stop"]
-y_step = values["y_step"]
-
+# Instantiate camera object, set it to collect grayscale
+cam = uc480.UC480Camera()     
+cam.set_color_mode("raw8")
 
 # Function to set SLM based on given offset and pre-set variables
-gx = nx / H
-gy = ny / V
-def set_slm(x_0, y_0):
-    """Compute hologram and display in SLM window; auto-called by Tkinter"""
+def set_slm(x_0, y_0, vals = None):
+    """
+    Compute hologram and display in SLM window; auto-called by Tkinter.
+    Takes optional argument of beam parameter dictionary
+    """
+    if vals:
+        l, nx, ny = vals["l"], vals["nx"], vals["ny"]
     phi = np.angle((X - x_0) + 1j * (Y - y_0))
+    gx = nx / H
+    gy = ny / V
     hologram = np.mod(l * phi + 2 * np.pi * (Y * gy + X * gx), 2 * np.pi)
     scaled = (hologram / hologram.max() * 255).astype(np.uint8)
 
     cv2.imshow(slm_window_name, scaled)
     cv2.waitKey(20)
 
-# Instantiate camera object, let it to collect grayscale
-cam = uc480.UC480Camera()     
-cam.set_color_mode("raw8")
+# Create control window and unpack values after pressing "GATHER" button
+root = tk.Tk()
+ui = SLMControlsUI(root, cam=cam, set_slm_func=set_slm)
+root.mainloop()
+values = ui.values
 
 # Loop to set SLM, take picture, store resultant 8bit grayscale image
-x_offset_arr = np.arange(x_start, x_stop + x_step, x_step)
-y_offset_arr = np.arange(y_start, y_stop + x_step, y_step)
+x_offset_arr = np.arange(values["x_start"], values["x_stop"] + values["x_step"], values["x_step"])
+y_offset_arr = np.arange(values["y_start"], values["y_stop"] + values["y_step"], values["y_step"])
 
 def image_avg(num_frames_to_avg = 5):
     '''
@@ -108,7 +100,7 @@ x_list = []
 y_list = []
 for x_off in x_offset_arr:
     for y_off in y_offset_arr:
-        set_slm(x_off, y_off) # Set the SLM to be centered at (x_off, y_off)
+        set_slm(x_off, y_off, values) # Set the SLM to be centered at (x_off, y_off)
 
         img = image_avg()
 
