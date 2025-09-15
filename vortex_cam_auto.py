@@ -16,6 +16,7 @@ frame = data['frames'][idx]
 
 import numpy as np
 import os
+from datetime import datetime
 
 import cv2
 from screeninfo import get_monitors
@@ -120,7 +121,9 @@ y_offsets = np.array(y_list)
 script_dir = os.path.dirname(os.path.abspath(__file__))
 data_dir = os.path.join(script_dir, "data")
 os.makedirs(data_dir, exist_ok=True)
-np.savez(f"{data_dir}/beam_dataset.npz", frames=frames, x_offset_arr = x_offsets, y_offset_arr = y_offsets)
+timestamp = datetime.now().strftime("%Y%m%d_%H%M")
+filename = f"vortex_{timestamp}.npz"
+np.savez(f"{data_dir}/{filename}", frames=frames, x_offset_arr = x_offsets, y_offset_arr = y_offsets)
 
 cam.close()
 cv2.destroyAllWindows()
