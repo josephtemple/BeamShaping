@@ -25,21 +25,27 @@ class SLMControlsUI():
         frame_top.pack(padx=10, pady=5, fill="x")
 
         # box and label for topological charge
-        ttk.Label(frame_top, text="Topological Charge (l)", justify="center").pack()
-        self.top_charge = tk.StringVar(value="2")
-        self.top_charge_entry = ttk.Entry(frame_top, width=20, textvariable = self.top_charge)
-        self.top_charge_entry.pack(pady=2)
+        ttk.Label(frame_top, text="Topological Charge (l)", justify="center").pack()    # make text box
+        self.top_charge = tk.StringVar(value="2")                                       # default value
+        self.top_charge_entry = ttk.Entry(frame_top, width=20, textvariable = self.top_charge)  # variable from text entry
+        self.top_charge_entry.bind("<Return>", lambda e: self.update_slm())      # pressing 'enter' updates SLM
+        self.top_charge_entry.bind("<FocusOut>", lambda e: self.update_slm())    # clicking out of box updates
+        self.top_charge_entry.pack(pady=2)                                                      # make pretty
 
         # box and label for n_x
         ttk.Label(frame_top, text="Horizontal Grooves (nₓ)", justify="center").pack()
         self.nx = tk.StringVar(value="100")
         self.nx_entry = ttk.Entry(frame_top, width=20, textvariable = self.nx)
+        self.nx_entry.bind("<Return>", lambda e: self.update_slm())
+        self.nx_entry.bind("<FocusOut>", lambda e: self.update_slm())
         self.nx_entry.pack(pady=2)
 
         # box and label for n_y
         ttk.Label(frame_top, text="Vertical Grooves (nᵧ)", justify="center").pack()
         self.ny = tk.StringVar(value="100")
         self.ny_entry = ttk.Entry(frame_top, width=20, textvariable = self.ny)
+        self.nx_entry.bind("<Return>", lambda e: self.update_slm())
+        self.nx_entry.bind("<FocusOut>", lambda e: self.update_slm())
         self.ny_entry.pack(pady=2)
 
         # 3 boxes and labels side by side for range to sweep x over and stepsize
@@ -96,7 +102,17 @@ class SLMControlsUI():
         gather_btn = tk.Button(frame_buttons, text="GATHER", bg="green", fg="white", command=self.gather_button)
         gather_btn.grid(row=0, column=2, padx=15)
 
+        if self.set_slm_func:
+            vals = self.get_values()
+            self.set_slm_func(0, 0, vals)  # center hologram at (0,0) during preview
+
+    def update_slm(self, *args):
+        if self.set_slm_func:
+            vals = self.get_values()
+            self.set_slm_func(0, 0, vals)
+
     def preview_button(self):
+        self.update_slm()
         if self.cam is None:
             print("[slm_ui] No camera passed to UI, cannot preview.")
             return
@@ -108,12 +124,25 @@ class SLMControlsUI():
 
         while True:
             frame = self.cam.grab()[0]
+
+            # check for saturation: more than 64 pixels with value 255
+            if (frame >= 255).sum() > 64:
+                cv2.putText(frame,
+                            "WARNING: Several pixels capped at 255 brightness",
+                            (10, 30),                      # position (x,y)
+                            cv2.FONT_HERSHEY_SIMPLEX,      # font
+                            0.7,                           # font scale
+                            (0, 0, 255),                   # text color (red)
+                            2,                             # thickness
+                            cv2.LINE_AA)
+
             cv2.imshow("Live Preview", frame)
             if cv2.waitKey(20) & 0xFF == ord('q'):
                 break
         cv2.destroyWindow("Live Preview")
 
     def gather_button(self):
+        self.update_slm()
         if not self.gather_clicked:
             self.gather_clicked = True
             print("Data Gathering has begun! Closing UI...")
