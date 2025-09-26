@@ -6,6 +6,8 @@ dependencies:
   - python=3.13.5
   - numpy
   - scipy
+  - scikit-learn
+  - scikit-image
   - matplotlib
   - jupyterlab
   - pylablib
