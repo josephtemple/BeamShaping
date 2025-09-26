@@ -30,10 +30,10 @@ from slm_ui import SLMControlsUI
 monitors = get_monitors()
 if len(monitors) > 1:
     slm_monitor = monitors[1]
-    print("[vortex_cam_auto.py] Secondary monitor set as SLM display.")
+    print("[vortex_cam_auto] Secondary monitor set as SLM display.")
 else:
     slm_monitor = monitors[0]
-    print("[vortex_cam_auto.py][DEBUG] SLM not detected. Will display SLM in secondary window on primary monitor.")
+    print("[vortex_cam_auto][DEBUG] SLM not detected. Will display SLM in secondary window on primary monitor.")
 
 H = slm_monitor.width
 V = slm_monitor.height
@@ -81,7 +81,7 @@ if hasattr(ui, "values"):
     values = ui.values
     # continue with data gathering
 else:
-    print("[vortex_cam_auto.py] Quitting...")
+    print("[vortex_cam_auto] Quitting...")
     exit(0)
 
 # Loop to set SLM, take picture, store resultant 8bit grayscale image
