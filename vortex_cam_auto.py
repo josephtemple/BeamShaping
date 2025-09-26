@@ -16,6 +16,7 @@ frame = data['frames'][idx]
 
 import numpy as np
 import os
+from sys import exit
 from datetime import datetime
 
 import cv2
@@ -29,10 +30,10 @@ from slm_ui import SLMControlsUI
 monitors = get_monitors()
 if len(monitors) > 1:
     slm_monitor = monitors[1]
-    print("[vortex.py] Secondary monitor set as SLM display.")
+    print("[vortex_cam_auto.py] Secondary monitor set as SLM display.")
 else:
     slm_monitor = monitors[0]
-    print("[vortex.py][DEBUG] SLM not detected. Will display SLM in secondary window on primary monitor.")
+    print("[vortex_cam_auto.py][DEBUG] SLM not detected. Will display SLM in secondary window on primary monitor.")
 
 H = slm_monitor.width
 V = slm_monitor.height
@@ -76,7 +77,12 @@ def set_slm(x_0, y_0, vals = None):
 root = tk.Tk()
 ui = SLMControlsUI(root, cam=cam, set_slm_func=set_slm)
 root.mainloop()
-values = ui.values
+if hasattr(ui, "values"):
+    values = ui.values
+    # continue with data gathering
+else:
+    print("[vortex_cam_auto.py] Quitting...")
+    exit(0)
 
 # Loop to set SLM, take picture, store resultant 8bit grayscale image
 x_offset_arr = np.arange(values["x_start"], values["x_stop"] + values["x_step"], values["x_step"])
