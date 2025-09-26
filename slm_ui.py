@@ -135,6 +135,15 @@ class SLMControlsUI():
                             (0, 0, 255),                   # text color (red)
                             2,                             # thickness
                             cv2.LINE_AA)
+            
+            cv2.putText(frame,
+                        "Press 'q' to close preview.",
+                        (10, len(frame) - 30),                      # position (x,y)
+                        cv2.FONT_HERSHEY_SIMPLEX,      # font
+                        0.7,                           # font scale
+                        (255, 255, 255),                   # text color (red)
+                        2,                             # thickness
+                        cv2.LINE_AA)
 
             cv2.imshow("Live Preview", frame)
             if cv2.waitKey(20) & 0xFF == ord('q'):
