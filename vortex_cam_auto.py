@@ -123,13 +123,22 @@ frames = np.stack(img_list, axis=0)   # shape (N, H, W)
 x_offsets = np.array(x_list)
 y_offsets = np.array(y_list)
 
-# save all together in one .npz
+# save all together in one .npz 
 script_dir = os.path.dirname(os.path.abspath(__file__))
 data_dir = os.path.join(script_dir, "data")
 os.makedirs(data_dir, exist_ok=True)
 timestamp = datetime.now().strftime("%Y%m%d_%H%M")
 filename = f"vortex_{timestamp}.npz"
 np.savez(f"{data_dir}/{filename}", frames=frames, x_offset_arr = x_offsets, y_offset_arr = y_offsets)
+# write beam specifications in ./data_dir/beam_settings.txt
+settings_file = f"{data_dir}/beam_settings.txt"
+settings_str = f"{filename} l={values['l']} nx={values['nx']} ny={values['ny']}"
+if os.path.exists(settings_file):
+    with open(settings_file, "a") as file:
+        file.write(f"\n{settings_str}")
+else:
+    with open(settings_file, "w") as file:
+        file.write(settings_str)
 
 cam.close()
 cv2.destroyAllWindows()
