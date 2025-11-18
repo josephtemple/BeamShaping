@@ -10,6 +10,9 @@ of intensity slices from the mean brightests) is low enough. Also produces two p
 intensities before and after.
 """
 import numpy as np
+import matplotlib.pyplot as plt
+from scipy.optimize import curve_fit
+
 import os
 from sys import exit
 from datetime import datetime
@@ -143,11 +146,125 @@ def def_offset_map(stepsize):
     }
     return offset_map
 
+# beam imaging functions
+def gaussian(x,a,b,c):
+        return a * np.exp(-(x - b)**2 / (2*c**2))
+
+def fit_gaussians(intensity_dict):
+    '''
+    Given the four intensity profiles, return a dictionary giving
+    the fitted parameters of each
+    '''
+    param_dict = {}
+
+    for key in intensity_dict.keys():
+        intensity = intensity_dict[key]
+        x = np.arange(0, len(intensity),1)
+        try:
+            params, _ = curve_fit(gaussian, x, intensity)
+            param_dict[key] = params
+        except RuntimeError:
+            param_dict[key] = [1e6, 2e6, 3e6]
+
+    return param_dict
+
+def plot_intensities(img, desired_x, desired_y, x_center, y_center, intensity_dict, param_dict, time_txt, smooth: bool, ui_dir = None):
+    '''
+    From beam center, go left, right, up, and down to boarder and collect brightnesses
+    along the way. Show all four intensity curves and the image with all four of those
+    mapped and color-coded.
+
+    Parameters
+    ----------
+    img : NDArray
+        numpy array of 0 - 255 brightness values for image
+    desired_x, desired_y : int
+        SLM pixel offset
+    x_center, y_center : int
+        pixel center of beam profile from find_annulus_center function
+    intensity_dict : dict
+        A dictionary of the four intensity slices, output of 'create_intensity_dict' function
+    param_dict : dict
+        A dictionary of the Gaussian parameters, output of 'fit_gaussians'
+    time_txt : String
+        A string saying whether this is pre- or post-alignment.
+    smooth : bool
+        If true, smooth image before computing intensity profile. Almost always desired.
+    ui_dir : str
+        If None, will create direction based on file selection from ui. If not None, will be that
+
+    Returns
+    -------
+    i
+    '''
+    if smooth:
+        img = cv2.blur(img, (10,10)) # smooth over imaged impurities
+
+    # define figure and grid spacing
+    fig = plt.figure(figsize=(16, 8))
+    gs = fig.add_gridspec(4, 3, width_ratios=[1, 1, 1.6])  
+
+    # 2x2 square plots (take rows 0-3, cols 0-1)
+    ax1 = fig.add_subplot(gs[0:2, 0])   # top-left
+    ax2 = fig.add_subplot(gs[0:2, 1])   # top-right
+    ax3 = fig.add_subplot(gs[2:4, 0])   # bottom-left
+    ax4 = fig.add_subplot(gs[2:4, 1])   # bottom-right
+    ax_ls = [ax1, ax2, ax3, ax4]
+
+    # Image (span all 4 rows in last col)
+    ax_img = fig.add_subplot(gs[:, 2])
+
+    # plot the supposed Gaussians
+    direction_ls = ["left","right","up","down"]
+    color_ls = ["forestgreen","dodgerblue","red","darkorchid"]
+    i = 0
+    for ax in [ax1, ax2, ax3, ax4]:
+        direction = direction_ls[i]
+        x_range = np.arange(0, len(intensity_dict[direction]),1)
+        ax.scatter(x_range, intensity_dict[direction], s=6, color=color_ls[i])
+        ax.plot(x_range, gaussian(x_range, *param_dict[direction]), color = 'black', linewidth = 3)
+        ax.set_ylim(0,265)
+        ax.set_box_aspect(1)
+        i += 1
+
+    # axis labels for intensity plots
+    from matplotlib.transforms import Bbox
+    bbox = Bbox.union([ax.get_position() for ax in ax_ls])
+    big_ax = fig.add_axes(bbox, frameon=False)
+    big_ax.tick_params(labelcolor='none', top=False, bottom=False, left=False, right=False)
+    big_ax.set_xlabel("Pixels", fontsize = 12)
+    big_ax.set_ylabel("Intensity", fontsize = 12)
+
+    # show imaged beam
+    ax_img.imshow(img, cmap='gray')
+    ax_img.axis('off')
+
+    # make colored lines on image
+    linewidth = 5
+    ax_img.plot([0, x_center], [y_center, y_center], color_ls[0], linestyle='-', linewidth=linewidth)  # left, from (0, y_center) to (x_center, y_center)
+    ax_img.plot([x_center, img.shape[1]-1], [y_center, y_center], color_ls[1], linestyle='-', linewidth=linewidth)  # right, from (x_center, y_center) to (img.shape[0], y_center)
+    ax_img.plot([x_center, x_center], [0, y_center], color_ls[2], linestyle='-', linewidth=linewidth)  # up, from (x_center, 0) to (x_center, y_center)
+    ax_img.plot([x_center, x_center], [y_center, img.shape[0]-1], color_ls[3], linestyle='-', linewidth=linewidth)  # down, from (x_center, y_center) to (x_center, img.shape[1])
+    ax_img.set_title(f"Beam profile for x-offset = {desired_x} pixels, y-offset = {desired_y} pixels")
+
+    if smooth:
+        smooth_txt = 'smoothed'
+    else:
+        smooth_txt = 'raw'
+    fig.suptitle(f"Axial intensity profiles of {smooth_txt} imaged vortex beam", fontsize = 20)
+
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    fig_dir = os.path.join(script_dir, f"fig/{ui_dir}")
+        
+    os.makedirs(fig_dir, exist_ok=True)
+    filename = os.path.join(fig_dir, f"intensity_{time_txt}_alignment.png")
+    plt.savefig(filename)
+
+
 # Perform alignment
 offset_choices = ["A","B","C","D"]
 
 stepsize = 1
-stepsize_increases = 0
 offset_map = def_offset_map(stepsize)
 
 opposite_choice = {
@@ -165,15 +282,14 @@ set_slm(x_off, y_off, values)  # Set the SLM to initial position
 img = image_avg()
 L = loss_of_image(img)         # compute loss 
 
-# take image of beam before alignment
-from find_optimal_shift import gaussian, fit_gaussians, plot_intensities
+#image beam
 intensity_dict = create_intensity_dict(img, x_center, y_center, smooth = True)
 
 param_dict = fit_gaussians(intensity_dict)
-plot_intensities(img, 0, 0, x_center, y_center, intensity_dict, param_dict, "before", smooth = True, ui_dir = False)
+plot_intensities(img, 0, 0, x_center, y_center, intensity_dict, param_dict, "before", smooth = True, ui_dir = "test")
 
-
-while stepsize_increases < 10 and L >= 100:
+# perform alignment loop
+while stepsize < 6 and L >= 100:
     # make choice of direction to move (all directions possible first time, after that it changes)
     choice = np.random.choice(remaining_choices)
     
@@ -225,7 +341,6 @@ while stepsize_increases < 10 and L >= 100:
         # if we've tried every direction, increase the stepsize and try again
         if len(rejects) == 4:
             stepsize += 1
-            stepsize_increases += 1
             offset_map = def_offset_map(stepsize)
             remaining_choices = offset_choices.copy()
             rejects = []
@@ -237,4 +352,4 @@ img = image_avg()
 intensity_dict = create_intensity_dict(img, x_center, y_center, smooth = True)
 
 param_dict = fit_gaussians(intensity_dict)
-plot_intensities(img, 0, 0, x_center, y_center, intensity_dict, param_dict, "after", smooth = True, ui_dir = False)
+plot_intensities(img, x_off, y_off, x_center, y_center, intensity_dict, param_dict, "after", smooth = True, ui_dir = "test")
