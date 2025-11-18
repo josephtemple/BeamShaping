@@ -17,6 +17,7 @@ import cv2
 from scipy.optimize import curve_fit
 from numpy.typing import NDArray
 import time
+from datetime import datetime
 
 # --- code to select file to analyze ---
 def select_file():
@@ -42,7 +43,7 @@ button.pack(pady=10)
 
 root.mainloop()
 
-# --- loading in dataset ---
+# --- load in dataset ---
 print("[find_optimal_shift.py] Starting Analysis...")
 beam_data = np.load(f"{data_dir}/{selected_file.get()}")
 
@@ -142,7 +143,7 @@ def fit_gaussians(intensity_dict):
 
     return param_dict
 
-def plot_intensities(img, desired_x, desired_y, x_center, y_center, intensity_dict, param_dict, time_txt, smooth: bool):
+def plot_intensities(img, desired_x, desired_y, x_center, y_center, intensity_dict, param_dict, time_txt, smooth: bool, ui_dir: bool = True):
     '''
     From beam center, go left, right, up, and down to boarder and collect brightnesses
     along the way. Show all four intensity curves and the image with all four of those
@@ -164,6 +165,9 @@ def plot_intensities(img, desired_x, desired_y, x_center, y_center, intensity_di
         A string saying whether this is pre- or post-alignment.
     smooth : bool
         If true, smooth image before computing intensity profile. Almost always desired.
+    ui_dir : bool
+        If true, will create direction based on file selection from ui. If false, will be chosen
+        as current date and time
 
     Returns
     -------
@@ -226,7 +230,11 @@ def plot_intensities(img, desired_x, desired_y, x_center, y_center, intensity_di
     fig.suptitle(f"Axial intensity profiles of {smooth_txt} imaged vortex beam", fontsize = 20)
 
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    fig_dir = os.path.join(script_dir, f"fig/{selected_file.get()}")
+    if ui_dir:
+        fig_dir = os.path.join(script_dir, f"fig/{selected_file.get()}")
+    else:
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M")
+        fig_dir = os.path.join(script_dir, f"fig/{timestamp}")
     os.makedirs(fig_dir, exist_ok=True)
     filename = os.path.join(fig_dir, f"intensity_{time_txt}_alignment.png")
     plt.savefig(filename)
