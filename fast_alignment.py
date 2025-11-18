@@ -1,7 +1,13 @@
 """
 fast_alignment.py
 
-will write description when the thing works more
+Finds optimal alignment by a pseudo-gradient descent method. Starting with a manually aligned
+as-best-as-can-be-done-by-hand vortex beam (which doesn't have to be very good), user clicks
+in center of vortex, then we stochastically walk around the loss surface, adjusting the offset
+of the SLM. We do this, occasionally increasing and decreasing the step size to avoid
+spurious minima, until a proxy loss function (sum of square differences of brightest value
+of intensity slices from the mean brightests) is low enough. Also produces two plots, of the
+intensities before and after.
 """
 import numpy as np
 import os
