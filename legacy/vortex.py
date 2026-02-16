@@ -27,8 +27,8 @@ y = np.arange(-V/2, V/2)
 X, Y = np.meshgrid(x, y)
 
 # Runtime variables
-x_shift = 220   # shift center horizontally (right if positive, left if negative)
-y_shift = -100   # shift center vertically (down if positive, up if negative)
+x_shift = 0   # shift center horizontally (right if positive, left if negative)
+y_shift = 0   # shift center vertically (down if positive, up if negative)
 
 l = 2    # Topological charge
 nx = 50  # Number of horizontal grooves
