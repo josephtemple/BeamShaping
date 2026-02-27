@@ -136,7 +136,7 @@ entry_y0 = labeled_entry(page_main, "Vertical Center Shift (y0)", 0)
 
 tk.Label(page_main, text="Press 'Enter' to Update Hologram", font=("Arial", 10, "bold")).pack(pady=50)
 
-# Aberrations
+# Aberration
 tk.Label(page_aberr, text="Zernike Aberrations (Noll 2–11)", font=("Arial", 12, "bold")).pack(pady=10)
 
 aberr_entries = []
